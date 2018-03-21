@@ -1,7 +1,10 @@
 package flowdroid.helper;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,13 +47,16 @@ public class ExtractSourceSinkFlow {
 
 		final SetupApplication app;
 		app = new SetupApplication(this.androidJar, this.apkFile);
-
 		app.setConfig(this.config);
 
 		System.out.println("Running data flow analysis...");
 		app.addResultsAvailableHandler(new MyResultsAvailableHandler());
 		final InfoflowResults res = app.runInfoflow(this.sourcesAndSinksFile);
-		System.out.println("Analysis has run for " + (System.nanoTime() - beforeRun) / 1E9 + " seconds");
+		this.flowResult.setCostTime((System.nanoTime() - beforeRun) / 1E9);
+		System.out.println("Analysis has run for " + this.flowResult.getCostTime() + " seconds");
+
+		this.flowResult.setSelSources(app.getCollectedSources());
+		this.flowResult.setSelSinks(app.getCollectedSinks());
 
 		// 显示所选的 sources 和 sinks
 		if (this.config.getLogSourcesAndSinks()) {
@@ -61,22 +67,33 @@ public class ExtractSourceSinkFlow {
 	}
 
 	private void loadConfig() {
-		if (showLogSourcesAndSinks) {
-			this.config.setLogSourcesAndSinks(true);
+		// 是否打印 Sources and Sinks
+		this.config.setLogSourcesAndSinks(true);
+
+		// SourcesAndSinks.txt 文件是否存在
+		Path curDir = Paths.get(System.getProperty("user.dir"));
+		Path sourceSinkPath = Paths.get(curDir.toString(), this.sourcesAndSinksFile);
+		File sourceSinkFile = sourceSinkPath.toFile();
+		if (!sourceSinkFile.exists()) {
+			System.out.println("SourcesAndSinks.txt not exists");
 		}
+
 	}
 
 	private void printSourcesAndSinks(SetupApplication app) {
-		if (!app.getCollectedSources().isEmpty()) {
-			System.out.println("Collected sources:");
-			for (Stmt s : app.getCollectedSources())
-				System.out.println("\t" + s);
+		if (this.showLogSourcesAndSinks) {
+			if (!app.getCollectedSources().isEmpty()) {
+				System.out.println("Collected sources:");
+				for (Stmt s : app.getCollectedSources())
+					System.out.println("\t" + s);
+			}
+			if (!app.getCollectedSinks().isEmpty()) {
+				System.out.println("Collected sinks:");
+				for (Stmt s : app.getCollectedSinks())
+					System.out.println("\t" + s);
+			}
 		}
-		if (!app.getCollectedSinks().isEmpty()) {
-			System.out.println("Collected sinks:");
-			for (Stmt s : app.getCollectedSinks())
-				System.out.println("\t" + s);
-		}
+
 	}
 
 	private class MyResultsAvailableHandler implements ResultsAvailableHandler {
@@ -113,7 +130,7 @@ public class ExtractSourceSinkFlow {
 								+ ")");
 						if (source.getPath() != null)
 							print("\t\ton Path " + Arrays.toString(source.getPath()));
-						tempFlow = source.getSource() + " -> " + sink;
+						tempFlow = source.getSource() + " @ " + sink;
 						allFlow.add(tempFlow);
 					}
 				}

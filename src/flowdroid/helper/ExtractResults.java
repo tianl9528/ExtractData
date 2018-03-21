@@ -1,15 +1,21 @@
 package flowdroid.helper;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
-import soot.jimple.infoflow.results.ResultSinkInfo;
+import java.util.Set;
+
+import soot.jimple.Stmt;
+
+
 
 public class ExtractResults {
 	private String appName;
 	private String androidJar;
 	private String extractMode;
-	private List<ResultSinkInfo> sensitiveSinks = new ArrayList<ResultSinkInfo>();
-	private List<ResultSinkInfo> userSinks = new ArrayList<ResultSinkInfo>();
+	private double costTime;
+	private Set<Stmt> selSources = new HashSet<Stmt>();
+	private Set<Stmt> selSinks = new HashSet<Stmt>();
 	private List<String> extractContents = new ArrayList<String>();
 
 	public ExtractResults(String appName, String androidJar) {
@@ -20,9 +26,9 @@ public class ExtractResults {
 	public ExtractResults(String apkFile) {
 		this.appName = apkFile;
 	}
-	
+
 	public ExtractResults() {
-		
+
 	}
 
 	public String getAppName() {
@@ -64,20 +70,34 @@ public class ExtractResults {
 		return contents;
 	}
 
-	public List<ResultSinkInfo> getSensitiveSinks() {
-		return sensitiveSinks;
+	public double getCostTime() {
+		return costTime;
 	}
 
-	public void setSensitiveSinks(List<ResultSinkInfo> sensitiveSinks) {
-		this.sensitiveSinks = sensitiveSinks;
+	public void setCostTime(Double costTime) {
+		this.costTime = costTime;
 	}
 
-	public List<ResultSinkInfo> getUserSinks() {
-		return userSinks;
+
+
+	public Set<Stmt> getSelSources() {
+		return selSources;
 	}
 
-	public void setUserSinks(List<ResultSinkInfo> userSinks) {
-		this.userSinks = userSinks;
+	public void setSelSources(Set<Stmt> selSources) {
+		this.selSources = selSources;
+	}
+
+	public Set<Stmt> getSelSinks() {
+		return selSinks;
+	}
+
+	public void setSelSinks(Set<Stmt> selSinks) {
+		this.selSinks = selSinks;
+	}
+
+	public void setCostTime(double costTime) {
+		this.costTime = costTime;
 	}
 
 	public List<String> getExtractContents() {
