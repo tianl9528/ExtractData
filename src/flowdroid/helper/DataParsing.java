@@ -8,18 +8,17 @@ import java.util.Set;
 
 import soot.jimple.Stmt;
 
-
 public class DataParsing {
 	private String apkName;
 	private String apkPath;
 	private int manifestNum;
 	private int flowNum;
-	private long manifestTime;
 	private double flowTime;
 	private Set<Stmt> flowSources = new HashSet<Stmt>();
 	private Set<Stmt> flowSinks = new HashSet<Stmt>();
 	private List<String> manifestResults = new ArrayList<String>();
 	private List<String> flowResults = new ArrayList<String>();
+	private String mode;
 
 	public DataParsing() {
 
@@ -44,8 +43,8 @@ public class DataParsing {
 
 		return result.toString();
 	}
-	
-	public String sourcesToString(){
+
+	public String sourcesToString() {
 		if (this.flowSources == null) {
 			return null;
 		}
@@ -55,15 +54,15 @@ public class DataParsing {
 			if (first) {
 				first = false;
 			} else {
-				result.append(" & ");
+				result.append(" && ");
 			}
 			result.append(source);
 		}
 
 		return result.toString();
 	}
-	
-	public String sinksToString(){
+
+	public String sinksToString() {
 		if (this.flowSinks == null) {
 			return null;
 		}
@@ -73,7 +72,7 @@ public class DataParsing {
 			if (first) {
 				first = false;
 			} else {
-				result.append(" & ");
+				result.append(" && ");
 			}
 			result.append(sink);
 		}
@@ -91,7 +90,7 @@ public class DataParsing {
 			if (first) {
 				first = false;
 			} else {
-				result.append(",");
+				result.append(" && ");
 			}
 			result.append(string);
 		}
@@ -109,7 +108,7 @@ public class DataParsing {
 			if (first) {
 				first = false;
 			} else {
-				result.append(" & ");
+				result.append(" && ");
 			}
 			result.append(string);
 		}
@@ -149,14 +148,6 @@ public class DataParsing {
 
 	public void setFlowNum(int flowNum) {
 		this.flowNum = flowNum;
-	}
-
-	public long getManifestTime() {
-		return manifestTime;
-	}
-
-	public void setManifestTime(long manifestTime) {
-		this.manifestTime = manifestTime;
 	}
 
 	public double getFlowTime() {
@@ -199,5 +190,13 @@ public class DataParsing {
 	public void setFlowResults(List<String> flowResults) {
 		this.flowResults = flowResults;
 		this.flowNum = flowResults.size();
+	}
+
+	public String getMode() {
+		return mode;
+	}
+
+	public void setMode(String mode) {
+		this.mode = mode;
 	}
 }

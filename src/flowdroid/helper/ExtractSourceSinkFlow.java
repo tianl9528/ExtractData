@@ -29,13 +29,19 @@ public class ExtractSourceSinkFlow {
 	private ExtractResults flowResult = new ExtractResults();
 	private InfoflowAndroidConfiguration config = new InfoflowAndroidConfiguration();
 
+	public ExtractSourceSinkFlow(String apkFile, String androidJar, String mode) {
+		this.apkFile = apkFile;
+		this.androidJar = androidJar;
+		this.flowResult.setExtractMode(mode);
+	}
+
 	public ExtractSourceSinkFlow(String apkFile, String androidJar) {
 		this.apkFile = apkFile;
 		this.androidJar = androidJar;
 	}
-
+	
 	public ExtractSourceSinkFlow() {
-		// TODO Auto-generated constructor stub
+
 	}
 
 	public InfoflowResults run() throws IOException, XmlPullParserException {
@@ -130,7 +136,7 @@ public class ExtractSourceSinkFlow {
 								+ ")");
 						if (source.getPath() != null)
 							print("\t\ton Path " + Arrays.toString(source.getPath()));
-						tempFlow = source.getSource() + " @ " + sink;
+						tempFlow = source.getSource() + " @@ " + sink;
 						allFlow.add(tempFlow);
 					}
 				}
@@ -190,4 +196,5 @@ public class ExtractSourceSinkFlow {
 	public void setFlowResult(ExtractResults flowResult) {
 		this.flowResult = flowResult;
 	}
+	
 }

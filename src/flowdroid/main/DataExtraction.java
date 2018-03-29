@@ -32,22 +32,21 @@ public class DataExtraction {
 
 		String apkPath = args[0];
 		String androidJar = args[1];
-		String mode = args[2]; // 暂未处理
+		String mode = args[2];
 
 		// 验证并处理参数
-		List<String> apkFiles = validateAgrs(apkPath, androidJar);
+		List<String> apkFiles = validateAgrs(apkPath, androidJar, mode);
 
 		// 运行并提取结果
-		List<DataParsing> allResults = run(apkPath, apkFiles, androidJar);
+		List<DataParsing> allResults = run(apkPath, apkFiles, androidJar, mode, 1);
 
-		
 		// 保存所有数据到单个文件
-		savaOverview(allResults);
-		savaFormat(allResults);
+		savaOverview(allResults, 0);
+		savaFormat(allResults, 0);
 
 	}
 
-	public static List<String> validateAgrs(String apkPath, String androidJar) {
+	public static List<String> validateAgrs(String apkPath, String androidJar, String mode) {
 
 		List<String> apkFiles = new ArrayList<String>();
 
@@ -87,13 +86,24 @@ public class DataExtraction {
 			return null;
 		}
 
+		// args[2]
+		if (!mode.equals("1") & !mode.equals("0")) {
+			printUsage();
+		}
+
 		return apkFiles;
 	}
 
-	private static List<DataParsing> run(String apkPath, List<String> apkFiles, String androidJar) throws IOException, XmlPullParserException {
+	private static List<DataParsing> run(String apkPath, List<String> apkFiles, String androidJar, String mode,
+			int batch) throws IOException {
+
 		List<DataParsing> allResults = new ArrayList<DataParsing>();
+
 		ExtractAndroidManifest EAM = new ExtractAndroidManifest();
+		EAM.getManifestResult().setExtractMode(mode);
+
 		ExtractSourceSinkFlow ESSF = new ExtractSourceSinkFlow();
+		ESSF.getFlowResult().setExtractMode(mode);
 
 		// 实现apk目录内所有文件提取
 		int oldRepeatCount = repeatCount;
@@ -121,47 +131,93 @@ public class DataExtraction {
 				flagFile.createNewFile();
 
 			} else
-				fullFilePath = fileName;
+				fullFilePath = apkPath + File.separator + fileName;
 
 			// TODO
 			// 提取文件数据
+			System.out.println((apkFiles.indexOf(fileName) + 1) + " / " + apkFiles.size());
 			while (repeatCount > 0) {
 				System.gc();
 				DataParsing results = new DataParsing(fullFilePath);
 				// 提取权限
 				EAM.setApkFile(fullFilePath);
-				EAM.run();
+				try {
+					EAM.run();
+				} catch (IOException e1) {
+					File failureFile = new File("FinalResult/_Run_" + new File(fileName).getName());
+					failureFile.createNewFile();
+					savaFormat(allResults, 0);
+					savaOverview(allResults, 0);
+					System.out.println("Manifest IO: " + e1);
+				} catch (XmlPullParserException e1) {
+					File failureFile = new File("FinalResult/_Run_" + new File(fileName).getName());
+					failureFile.createNewFile();
+					savaFormat(allResults, 0);
+					savaOverview(allResults, 0);
+					System.out.println("Manifest XmlPullParser: " + e1);
+				}
 				results.setManifestResults(EAM.getManifestResult().getExtractContents());
 
 				// 提取流
 				ESSF.setAndroidJar(androidJar);
 				ESSF.setApkFile(fullFilePath);
-				ESSF.run();
+				try {
+					ESSF.run();
+				} catch (IOException e) {
+					File failureFile = new File("FinalResult/_Run_" + new File(fileName).getName());
+					failureFile.createNewFile();
+					savaFormat(allResults, 0);
+					savaOverview(allResults, 0);
+					System.out.println("Flow IO: " + e);
+				} catch (XmlPullParserException e) {
+					File failureFile = new File("FinalResult/_Run_" + new File(fileName).getName());
+					failureFile.createNewFile();
+					savaFormat(allResults, 0);
+					savaOverview(allResults, 0);
+					System.out.println("Flow XmlPullParser: " + e);
+				}
 				results.setFlowResults(ESSF.getFlowResult().getExtractContents());
 				results.setFlowTime(ESSF.getFlowResult().getCostTime());
 				results.setFlowSources(ESSF.getFlowResult().getSelSources());
 				results.setFlowSinks(ESSF.getFlowResult().getSelSinks());
+				results.setFlowTime(ESSF.getFlowResult().getCostTime());
+				results.setMode(mode);
 
 				allResults.add(results);
 
 				repeatCount--;
+				if ((apkFiles.indexOf(fileName) + 1) % batch == 0) {
+					savaOverview(allResults, batch);
+					savaFormat(allResults, batch);
+					System.gc();
+				}
+
 			}
 
 			System.gc();
 		}
+		
 		return allResults;
 	}
-	
-	private static void savaOverview(List<DataParsing> allresults) throws IOException {
+
+	private static void savaOverview(List<DataParsing> allresults, int batch) throws IOException {
 		// 保存 Overview 结果
 
 		System.out.println("正在保存 Overview 结果");
+		File finalResult;
 		FileWriter fw = null;
 		BufferedWriter bw = null;
 
 		// 创建保存文件
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
-		File finalResult = new File("FinalResult/overview/OverviewResult_" + df.format(new Date()) + ".txt");
+
+		if (batch == 0) {
+			finalResult = new File("FinalResult/overview/OverviewResult_" + df.format(new Date()) + ".txt");
+		} else {
+			finalResult = new File(
+					"FinalResult/overview/OverviewResult_" + df.format(new Date()) + "_" + batch + ".txt");
+		}
+
 		File finalResultDir = finalResult.getParentFile();
 		if (!finalResultDir.exists()) {
 			finalResultDir.mkdirs();
@@ -177,22 +233,29 @@ public class DataExtraction {
 			bw.write("\t--Flow, 共 " + results.getFlowNum() + ": " + results.getFlowResults() + "\n");
 			bw.write("\t\t--Time: " + results.getFlowTime() + " s\n");
 			bw.write("\t\t--Sources: " + results.getFlowSources() + "\n");
-			bw.write("\t\t--Sinks: " + results.getFlowSinks() + "\n\n");
+			bw.write("\t\t--Sinks: " + results.getFlowSinks() + "\n");
+			bw.write("\t--Mode: " + results.getMode() + "\n\n");
 		}
 		bw.close();
 		System.out.println("已保存到 " + finalResult);
 	}
 
-	private static void savaFormat(List<DataParsing> allresults) throws IOException {
-		// 保存 Format 结果, 提取的字段“apkName|manifest|flow|soures|sinks”，字段之间用 | 隔开，字段内不同元素之间用 & 隔开， source 和sink 用 @ 连接
+	private static void savaFormat(List<DataParsing> allresults, int batch) throws IOException {
+		// 保存 Format 结果, 提取的字段“apkName | manifest | flow | soures | sinks”，字段之间用 |
+		// 隔开，字段内不同元素之间用 & 隔开， source 和sink 用 @ 连接
 
 		System.out.println("正在保存 Format 结果");
+		File finalResult;
 		FileWriter fw = null;
 		BufferedWriter bw = null;
 
 		// 创建保存文件
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
-		File finalResult = new File("FinalResult/format/FormatResult_" + df.format(new Date()) + ".txt");
+		if (batch == 0) {
+			finalResult = new File("FinalResult/format/FormatResult_" + df.format(new Date()) + ".txt");
+		} else {
+			finalResult = new File("FinalResult/format/FormatResult_" + df.format(new Date()) + "_" + batch + ".txt");
+		}
 		File finalResultDir = finalResult.getParentFile();
 		if (!finalResultDir.exists()) {
 			finalResultDir.mkdirs();
@@ -201,28 +264,25 @@ public class DataExtraction {
 		// 开始写文件
 		fw = new FileWriter(finalResult, true);
 		bw = new BufferedWriter(fw);
-		bw.write("apkName|manifest|flow|soures|sinks\n");
 		for (DataParsing results : allresults) {
-			List<String> data = Arrays.asList(results.apkNameToString(), results.manifestToString(), results.flowToString(),results.sourcesToString(),results.sinksToString());
+			List<String> data = Arrays.asList(results.apkNameToString(), results.manifestToString(),
+					results.flowToString(), results.sourcesToString(), results.sinksToString(),
+					String.valueOf(results.getFlowTime()), results.getMode());
 			StringBuilder result = new StringBuilder();
 			boolean first = true;
 			for (String string : data) {
 				if (first) {
 					first = false;
 				} else {
-					result.append("|");
+					result.append(" ||| ");
 				}
 				result.append(string);
 			}
-			bw.write(result.toString()+"\n");
+			bw.write(result.toString() + "\n");
 		}
 
 		bw.close();
 		System.out.println("已保存到 " + finalResult);
-	}
-	
-	private static void print() {
-		
 	}
 
 	private static void printUsage() {

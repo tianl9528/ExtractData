@@ -55,21 +55,6 @@ public class ExtractResults {
 		this.extractMode = extractMode;
 	}
 
-	public String getExtracModeText() {
-		String contents = "";
-		switch (this.extractMode) {
-		case "1":
-			contents = "Manifest";
-			break;
-		case "2":
-			contents = "Flow";
-		default:
-			contents = "All";
-			break;
-		}
-		return contents;
-	}
-
 	public double getCostTime() {
 		return costTime;
 	}

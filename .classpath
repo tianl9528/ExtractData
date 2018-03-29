@@ -3,7 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="ExLib/AXMLPrinter2.jar"/>
-	<classpathentry kind="lib" path="ExLib/soot-infoflow-android.jar"/>
+	<classpathentry kind="lib" path="ExLib/soot-infoflow-android.jar" sourcepath="/soot-infoflow-android"/>
 	<classpathentry kind="lib" path="ExLib/soot-infoflow.jar"/>
 	<classpathentry kind="lib" path="ExLib/sootclasses-trunk-jar-with-dependencies.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.junit.JUNIT_CONTAINER/4"/>

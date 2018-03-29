@@ -34,4 +34,12 @@ public class ExtractAndroidManifestTest {
 		System.out.println(result.toString());
 
 	}
+	
+	@Test
+	public void test() {
+		ExtractAndroidManifest E = new ExtractAndroidManifest();
+		E.getManifestResult().setExtractMode("1");
+//		E.setMode("1");
+		System.out.println(E.getManifestResult().getExtractMode());
+	}
 }
