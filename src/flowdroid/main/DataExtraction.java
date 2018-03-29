@@ -41,8 +41,8 @@ public class DataExtraction {
 		List<DataParsing> allResults = run(apkPath, apkFiles, androidJar, mode, 1);
 
 		// 保存所有数据到单个文件
-		savaOverview(allResults, 0);
-		savaFormat(allResults, 0);
+		savaOverview(allResults, 0, -1);
+		savaFormat(allResults, 0, -1);
 
 	}
 
@@ -95,7 +95,7 @@ public class DataExtraction {
 	}
 
 	private static List<DataParsing> run(String apkPath, List<String> apkFiles, String androidJar, String mode,
-			int batch) throws IOException {
+			int batch) throws IOException, XmlPullParserException {
 
 		List<DataParsing> allResults = new ArrayList<DataParsing>();
 
@@ -141,41 +141,14 @@ public class DataExtraction {
 				DataParsing results = new DataParsing(fullFilePath);
 				// 提取权限
 				EAM.setApkFile(fullFilePath);
-				try {
-					EAM.run();
-				} catch (IOException e1) {
-					File failureFile = new File("FinalResult/_Run_" + new File(fileName).getName());
-					failureFile.createNewFile();
-					savaFormat(allResults, 0);
-					savaOverview(allResults, 0);
-					System.out.println("Manifest IO: " + e1);
-				} catch (XmlPullParserException e1) {
-					File failureFile = new File("FinalResult/_Run_" + new File(fileName).getName());
-					failureFile.createNewFile();
-					savaFormat(allResults, 0);
-					savaOverview(allResults, 0);
-					System.out.println("Manifest XmlPullParser: " + e1);
-				}
+				EAM.run();
 				results.setManifestResults(EAM.getManifestResult().getExtractContents());
 
 				// 提取流
 				ESSF.setAndroidJar(androidJar);
 				ESSF.setApkFile(fullFilePath);
-				try {
-					ESSF.run();
-				} catch (IOException e) {
-					File failureFile = new File("FinalResult/_Run_" + new File(fileName).getName());
-					failureFile.createNewFile();
-					savaFormat(allResults, 0);
-					savaOverview(allResults, 0);
-					System.out.println("Flow IO: " + e);
-				} catch (XmlPullParserException e) {
-					File failureFile = new File("FinalResult/_Run_" + new File(fileName).getName());
-					failureFile.createNewFile();
-					savaFormat(allResults, 0);
-					savaOverview(allResults, 0);
-					System.out.println("Flow XmlPullParser: " + e);
-				}
+				ESSF.run();
+
 				results.setFlowResults(ESSF.getFlowResult().getExtractContents());
 				results.setFlowTime(ESSF.getFlowResult().getCostTime());
 				results.setFlowSources(ESSF.getFlowResult().getSelSources());
@@ -187,8 +160,10 @@ public class DataExtraction {
 
 				repeatCount--;
 				if ((apkFiles.indexOf(fileName) + 1) % batch == 0) {
-					savaOverview(allResults, batch);
-					savaFormat(allResults, batch);
+					int i = (apkFiles.indexOf(fileName) + 1) / batch;
+					savaOverview(allResults, batch, i);
+					savaFormat(allResults, batch, i);
+					allResults = new ArrayList<DataParsing>();
 					System.gc();
 				}
 
@@ -196,11 +171,11 @@ public class DataExtraction {
 
 			System.gc();
 		}
-		
+
 		return allResults;
 	}
 
-	private static void savaOverview(List<DataParsing> allresults, int batch) throws IOException {
+	private static void savaOverview(List<DataParsing> allresults, int batch, int i) throws IOException {
 		// 保存 Overview 结果
 
 		System.out.println("正在保存 Overview 结果");
@@ -212,10 +187,10 @@ public class DataExtraction {
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
 
 		if (batch == 0) {
-			finalResult = new File("FinalResult/overview/OverviewResult_" + df.format(new Date()) + ".txt");
+			finalResult = new File("FinalResult/overview/OverviewResult_" + df.format(new Date()) + "_final.txt");
 		} else {
 			finalResult = new File(
-					"FinalResult/overview/OverviewResult_" + df.format(new Date()) + "_" + batch + ".txt");
+					"FinalResult/overview/OverviewResult_" + df.format(new Date()) + "_" + batch + "_" + i + ".txt");
 		}
 
 		File finalResultDir = finalResult.getParentFile();
@@ -240,7 +215,7 @@ public class DataExtraction {
 		System.out.println("已保存到 " + finalResult);
 	}
 
-	private static void savaFormat(List<DataParsing> allresults, int batch) throws IOException {
+	private static void savaFormat(List<DataParsing> allresults, int batch, int i) throws IOException {
 		// 保存 Format 结果, 提取的字段“apkName | manifest | flow | soures | sinks”，字段之间用 |
 		// 隔开，字段内不同元素之间用 & 隔开， source 和sink 用 @ 连接
 
@@ -252,9 +227,10 @@ public class DataExtraction {
 		// 创建保存文件
 		SimpleDateFormat df = new SimpleDateFormat("yyyyMMddHHmmss");// 设置日期格式
 		if (batch == 0) {
-			finalResult = new File("FinalResult/format/FormatResult_" + df.format(new Date()) + ".txt");
+			finalResult = new File("FinalResult/format/FormatResult_" + df.format(new Date()) + "_final.txt");
 		} else {
-			finalResult = new File("FinalResult/format/FormatResult_" + df.format(new Date()) + "_" + batch + ".txt");
+			finalResult = new File(
+					"FinalResult/format/FormatResult_" + df.format(new Date()) + "_" + batch + "_" + i + ".txt");
 		}
 		File finalResultDir = finalResult.getParentFile();
 		if (!finalResultDir.exists()) {
